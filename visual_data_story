@@ -1,68 +1,51 @@
-# Load packages
-library(tidyverse)
-library(stringr)
-library(lubridate)
+---
+title: My daily bill story
+output: html_document
+---
 
-# Load data
-logged_data <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSqmNsKYk1tMRtLGm7GnGLojZjwW9nCLYFmr2DA3MvlzBT6G-bhwo1TOtyQwr6MsO40BNOCKxhI9qG0/pub?output=csv")
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
-# Rename columns
-latest_data <- logged_data %>%
-  rename(
-    date = 1,
-    outcome = 2,
-    total_amount_spent = 3,
-    spending_flag = 4
-  ) %>%
-  mutate(
-    total_amount_spent = str_remove_all(total_amount_spent, "[^\\d\\.]"),  # clean the letter that not number
-    total_amount_spent = as.numeric(total_amount_spent),
-    date = paste0(date, "2025"),      
-    date = dmy(date),                  
-    weekday = wday(date, label = TRUE) 
-  )
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE, error=FALSE)
+```
 
-# Plot 1: Total Spending per Day
-plot1 <- latest_data %>%
-  group_by(date) %>%
-  summarise(daily_spent = sum(total_amount_spent, na.rm = TRUE)) %>%
-  ggplot(aes(x = date, y = daily_spent)) +
-  geom_col(fill = "#ece7f2") +
-  labs(
-    title = "Total Spending Per Day",
-    x = "Date",
-    y = "Total Amount Spent"
-  ) +
-  theme_minimal()
+```{js}
+$(function() {
+  $(".level2").css('visibility', 'hidden');
+  $(".level2").first().css('visibility', 'visible');
+  $(".container-fluid").height($(".container-fluid").height() + 300);
+  $(window).on('scroll', function() {
+    $('h2').each(function() {
+      var h2Top = $(this).offset().top - $(window).scrollTop();
+      var windowHeight = $(window).height();
+      if (h2Top >= 0 && h2Top <= windowHeight / 2) {
+        $(this).parent('div').css('visibility', 'visible');
+      } else if (h2Top > windowHeight / 2) {
+        $(this).parent('div').css('visibility', 'hidden');
+      }
+    });
+  });
+})
+```
 
-ggsave("plot1.png", plot1, width = 8, height = 5)
+```{css}
+.figcaption {display: none}
+```
 
-# Plot 2: Frequency of "shopping" in Outcome
-plot2 <- latest_data %>%
-  mutate(shopping_count = str_count(str_to_lower(outcome), "shopping")) %>%
-  group_by(date) %>%
-  summarise(mentions = sum(shopping_count, na.rm = TRUE)) %>%
-  ggplot(aes(x = date, y = mentions)) +
-  geom_line(color = "#a6bddb", size = 1) +
-  labs(
-    title = "Mentions of 'shopping' in Outcome Over Time",
-    x = "Date",
-    y = "Mentions"
-  ) +
-  theme_minimal()
+## What's going on with this data?
+When I felt like it was getting harder and harder to control my weekly spending, I started to think of ways to do it, and I ended up creating a list of my weekly bills in hopes of controlling my spending habits.
+---
+The first statistic is about how much I spent in total each day of the month:
+---
 
-ggsave("plot2.png", plot2, width = 8, height = 5)
+![](plot1.png)
+---
+I think the activity that causes me to spend the most is shopping, so the second statistic graph is the days that shopping appears in my bills:
+---
 
-# Plot 3: Spending Distribution by Weekday
-plot3 <- latest_data %>%
-  filter(!is.na(total_amount_spent)) %>%
-  ggplot(aes(x = weekday, y = total_amount_spent)) +
-  geom_boxplot(fill = "#2b8cbe") +
-  labs(
-    title = "Spending Distribution by Weekday",
-    x = "Weekday",
-    y = "Total Amount Spent"
-  ) +
-  theme_minimal()
+![](plot2.png)
+---
+I created a weekday spending distribution at the same time to find my usual spending habits and try to improve them:
+---
 
-ggsave("plot3.png", plot3, width = 8, height = 5)
+![](plot3.png)
